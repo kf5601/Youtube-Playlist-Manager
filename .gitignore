@@ -6,6 +6,7 @@ token.json
 __pycache__/
 ui.__pycache__/
 Backup Client Info.txt
+ui.__pycache__/home.cpython-313.pyc
 # ============================
 # Python cache / build artifacts
 # ============================
