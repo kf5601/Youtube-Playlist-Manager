@@ -31,8 +31,8 @@ class PlaylistWindow(tk.Toplevel):
 
         self.title(f"Playlist: {playlist.get('title', '(no title)')}")
         # Bigger default window so buttons are visible without resizing
-        self.geometry("1200x750")
-        self.minsize(1000, 650)
+        self.geometry("1920x1080")
+        self.minsize(1000, 750)
 
         self.videos: List[Dict[str, Any]] = []
         self.search_results: List[Dict[str, Any]] = []
