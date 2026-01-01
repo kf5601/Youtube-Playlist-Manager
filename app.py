@@ -6,8 +6,8 @@ from ui.home import HomePage
 
 
 APP_TITLE = "YouTube Playlist Manager"
-APP_WIDTH = 1200
-APP_HEIGHT = 700
+APP_WIDTH = 1400
+APP_HEIGHT = 800
 
 
 def configure_style(root: tk.Tk) -> None:

@@ -1,75 +1,70 @@
+# ui/home.py
 import tkinter as tk
 from tkinter import ttk, messagebox
+
+from youtube_client import YouTubeClient
+from ui.playlist_window import PlaylistWindow
 
 
 class HomePage(ttk.Frame):
     """
-    Home screen for the YouTube Playlist Manager.
-
-    Responsibilities (UI-level for now):
-      - Show "Sign in with Google" / OAuth login button
-      - After login, show:
-          * Remaining API quota (placeholder label for now)
-          * A tab that lists all playlists (placeholder treeview for now)
+    Home screen:
+      - Sign in with Google (OAuth)
+      - Display estimated quota usage (session only)
+      - List playlists
+      - Open selected playlist in a new window
     """
 
-    def __init__(self, master: tk.Misc, controller=None, **kwargs):
-        """
-        `controller` is optional, in case later you want to pass
-        the main App object for navigation/state sharing.
-        For now you can ignore it.
-        """
+    def __init__(self, master: tk.Misc, **kwargs):
         super().__init__(master, **kwargs)
-        self.controller = controller
 
-        # internal state placeholders
-        self.is_logged_in = False
+        self.youtube_client: YouTubeClient | None = None
+        self.playlists: list[dict] = []
+
         self.current_user_label = tk.StringVar(value="Not signed in")
-        self.quota_label_var = tk.StringVar(value="Remaining quota: —")
+        self.quota_label_var = tk.StringVar(value="Quota used this session: 0 units")
         self.status_label_var = tk.StringVar(value="Please sign in to view your playlists.")
 
         self._build_ui()
 
     def _build_ui(self) -> None:
-        """Create all widgets and layout for the home page."""
-        # === Title ===
+        # Title
         title = ttk.Label(self, text="YouTube Playlist Manager", style="Title.TLabel")
         title.pack(pady=(16, 8))
 
-        # === Top bar: login + user status ===
+        # Top bar
         top_bar = ttk.Frame(self)
         top_bar.pack(fill="x", padx=16, pady=(0, 8))
 
         self.login_button = ttk.Button(
-            top_bar,
-            text="Sign in with Google",
-            command=self.on_login_clicked
+            top_bar, text="Sign in with Google", command=self.on_login_clicked
         )
         self.login_button.pack(side="left")
 
-        user_info_label = ttk.Label(
-            top_bar,
-            textvariable=self.current_user_label
-        )
+        user_info_label = ttk.Label(top_bar, textvariable=self.current_user_label)
         user_info_label.pack(side="left", padx=(12, 0))
 
-        # Optional future: add a "Sign out" button
-        # self.logout_button = ttk.Button(top_bar, text="Sign out", command=self.on_logout_clicked)
-        # self.logout_button.pack(side="right")
-
-        # === Notebook (tabs) ===
+        # Notebook
         notebook = ttk.Notebook(self)
         notebook.pack(fill="both", expand=True, padx=16, pady=(0, 16))
 
-        # --- Overview tab ---
+        # Overview tab
         overview_tab = ttk.Frame(notebook)
         notebook.add(overview_tab, text="Overview")
 
-        quota_frame = ttk.LabelFrame(overview_tab, text="API Quota")
+        quota_frame = ttk.LabelFrame(overview_tab, text="Quota (Approximate)")
         quota_frame.pack(fill="x", padx=12, pady=(12, 8))
 
         quota_label = ttk.Label(quota_frame, textvariable=self.quota_label_var)
-        quota_label.pack(anchor="w", padx=8, pady=8)
+        quota_label.pack(anchor="w", padx=8, pady=4)
+
+        note_label = ttk.Label(
+            quota_frame,
+            text="Note: Google does not expose exact remaining quota via the API.\n"
+                 "This shows estimated usage (units) in this app session only.",
+            wraplength=600,
+        )
+        note_label.pack(anchor="w", padx=8, pady=(0, 8))
 
         status_frame = ttk.LabelFrame(overview_tab, text="Status")
         status_frame.pack(fill="x", padx=12, pady=(0, 12))
@@ -77,14 +72,13 @@ class HomePage(ttk.Frame):
         status_label = ttk.Label(status_frame, textvariable=self.status_label_var)
         status_label.pack(anchor="w", padx=8, pady=8)
 
-        # --- Playlists tab ---
+        # Playlists tab
         playlists_tab = ttk.Frame(notebook)
         notebook.add(playlists_tab, text="Playlists")
 
         playlists_frame = ttk.LabelFrame(playlists_tab, text="Your Playlists")
         playlists_frame.pack(fill="both", expand=True, padx=12, pady=12)
 
-        # Treeview to show playlists: name, item count, maybe privacy
         columns = ("title", "item_count", "privacy")
         self.playlists_tree = ttk.Treeview(
             playlists_frame,
@@ -93,7 +87,9 @@ class HomePage(ttk.Frame):
             selectmode="browse",
             height=15,
         )
-        self.playlists_tree.pack(fill="both", expand=True, side="left", padx=(8, 0), pady=8)
+        self.playlists_tree.pack(
+            fill="both", expand=True, side="left", padx=(8, 0), pady=8
+        )
 
         self.playlists_tree.heading("title", text="Title")
         self.playlists_tree.heading("item_count", text="Items")
@@ -103,135 +99,115 @@ class HomePage(ttk.Frame):
         self.playlists_tree.column("item_count", width=80, anchor="center")
         self.playlists_tree.column("privacy", width=100, anchor="center")
 
-        # Scrollbar for playlists
         scrollbar = ttk.Scrollbar(
-            playlists_frame,
-            orient="vertical",
-            command=self.playlists_tree.yview
+            playlists_frame, orient="vertical", command=self.playlists_tree.yview
         )
         scrollbar.pack(side="right", fill="y", padx=(0, 8), pady=8)
-
         self.playlists_tree.configure(yscrollcommand=scrollbar.set)
 
-        # Bottom bar in playlists tab for "Open playlist" etc.
         actions_frame = ttk.Frame(playlists_tab)
         actions_frame.pack(fill="x", padx=12, pady=(0, 12))
 
         self.open_playlist_button = ttk.Button(
             actions_frame,
             text="Open selected playlist",
-            command=self.on_open_playlist_clicked
+            command=self.on_open_playlist_clicked,
+            state="disabled",
         )
         self.open_playlist_button.pack(side="right")
 
-        # At the start, disable playlist-related controls until login
-        self._set_logged_out_state()
+    # ------------------------------------------------------------------
+    # Helpers
+    # ------------------------------------------------------------------
 
-    # ======================================================================
-    # State & UI helpers
-    # ======================================================================
+    def _update_quota_label(self) -> None:
+        if self.youtube_client:
+            used = self.youtube_client.quota_used_units
+            self.quota_label_var.set(f"Quota used this session: {used} units")
 
-    def _set_logged_out_state(self) -> None:
-        """Update widgets to reflect 'not signed in' state."""
-        self.is_logged_in = False
-        self.current_user_label.set("Not signed in")
-        self.quota_label_var.set("Remaining quota: —")
-        self.status_label_var.set("Please sign in to view your playlists.")
-        self.open_playlist_button.state(["disabled"])
-        # Clear playlists tree
+    def _load_playlists_into_tree(self) -> None:
         for row in self.playlists_tree.get_children():
             self.playlists_tree.delete(row)
 
-    def _set_logged_in_state(self, user_display_name: str) -> None:
-        """Update widgets to reflect 'signed in' state (dummy for now)."""
-        self.is_logged_in = True
-        self.current_user_label.set(f"Signed in as: {user_display_name}")
-        self.status_label_var.set("Connected to YouTube. Playlists loaded.")
-        self.open_playlist_button.state(["!disabled"])
+        for pl in self.playlists:
+            title = pl.get("title") or "(no title)"
+            count = pl.get("item_count") or 0
+            privacy = (pl.get("privacy_status") or "").capitalize()
+            iid = pl["id"]  # use playlist ID as internal item id
+            self.playlists_tree.insert(
+                "",
+                "end",
+                iid=iid,
+                values=(title, count, privacy),
+            )
 
-    # ======================================================================
-    # Event handlers (placeholders for now)
-    # ======================================================================
+    # ------------------------------------------------------------------
+    # Event handlers
+    # ------------------------------------------------------------------
 
     def on_login_clicked(self) -> None:
         """
         Handle "Sign in with Google".
-        Right now this is just a placeholder that fakes a successful login.
-        Later you’ll:
-          - run the OAuth flow
-          - get credentials / YouTube client
-          - fetch remaining quota and playlists
-          - update the UI based on that data
         """
-        # TODO: replace with real OAuth logic
-        messagebox.showinfo(
-            "Login",
-            "TODO: Implement OAuth login with Google here.\n"
-            "For now, this just fakes a successful login."
-        )
+        try:
+            self.status_label_var.set("Signing in...")
+            self.update_idletasks()
 
-        # Fake logged-in state for UI testing
-        fake_user = "demo.user@gmail.com"
-        self._set_logged_in_state(user_display_name=fake_user)
+            client = YouTubeClient()
+            client.authenticate()
 
-        # Fake playlists data so you can see the UI
-        self._load_demo_playlists()
+            info = client.get_channel_basic_info()
+            channel_title = info.get("title") or "Unknown channel"
+            self.youtube_client = client
 
-        # Fake quota
-        self.quota_label_var.set("Remaining quota: 10,000 units (demo)")
+            self.current_user_label.set(f"Signed in as: {channel_title}")
+            self.status_label_var.set("Fetching playlists...")
+            self.update_idletasks()
 
-    def _load_demo_playlists(self) -> None:
-        """
-        Temporary helper: insert some fake playlists to visualize UI.
-        Replace this later with real API data.
-        """
-        for row in self.playlists_tree.get_children():
-            self.playlists_tree.delete(row)
+            self.playlists = client.list_playlists()
+            self._load_playlists_into_tree()
 
-        demo_data = [
-            ("Watch Later", 42, "Private"),
-            ("Favourites", 15, "Private"),
-            ("Cybersecurity Tutorials", 23, "Unlisted"),
-            ("Music Mix", 87, "Public"),
-        ]
-        for title, count, privacy in demo_data:
-            self.playlists_tree.insert(
-                "",
-                "end",
-                values=(title, count, privacy)
+            self.status_label_var.set("Playlists loaded.")
+            self.open_playlist_button.config(state="normal")
+
+            self._update_quota_label()
+
+        except FileNotFoundError as e:
+            messagebox.showerror(
+                "OAuth Error",
+                f"{e}\n\nMake sure client_secret.json is in the project folder.",
             )
+            self.status_label_var.set("Sign-in failed.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to sign in or load playlists:\n\n{e}")
+            self.status_label_var.set("Sign-in failed.")
 
     def on_open_playlist_clicked(self) -> None:
         """
-        Handle "Open selected playlist".
-        For now this just shows which playlist is selected.
-        Later, you'll:
-          - get the selected playlist's ID (from real API data)
-          - navigate to a dedicated playlist page/frame
-          - pass that playlist info to it
+        Open the selected playlist in a new playlist window.
         """
+        if not self.youtube_client:
+            messagebox.showwarning("Not signed in", "Please sign in first.")
+            return
+
         selected = self.playlists_tree.selection()
         if not selected:
             messagebox.showwarning("No selection", "Please select a playlist first.")
             return
 
-        values = self.playlists_tree.item(selected[0], "values")
-        playlist_title = values[0] if values else "(unknown)"
+        playlist_id = selected[0]
+        playlist = next((p for p in self.playlists if p["id"] == playlist_id), None)
+        if not playlist:
+            messagebox.showerror("Error", "Could not find playlist details.")
+            return
 
-        # TODO: replace this with navigation to PlaylistPage or similar
-        messagebox.showinfo(
-            "Open Playlist",
-            f"TODO: Open playlist page for:\n\n{playlist_title}"
+        # Open a new window for playlist management
+        PlaylistWindow(
+            master=self.winfo_toplevel(),
+            youtube_client=self.youtube_client,
+            playlist=playlist,
+            all_playlists=self.playlists,
         )
 
-    # ======================================================================
-    # Optional: hook called by app when this frame is shown
-    # ======================================================================
-
-    def on_show(self) -> None:
-        """
-        If your App calls `home.on_show()` when shown, you can use this
-        to refresh data. For now it's a no-op.
-        """
-        # e.g., later: if logged in, refresh quota/playlists
-        pass
+        # Update quota estimate after actions in child window
+        self._update_quota_label()
