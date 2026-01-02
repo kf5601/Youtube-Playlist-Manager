@@ -13,6 +13,7 @@ class HomePage(ttk.Frame):
       - Display estimated quota usage (session only)
       - List playlists
       - Open selected playlist in a new window
+      - Refresh playlists on demand
     """
 
     def __init__(self, master: tk.Misc, **kwargs):
@@ -105,9 +106,20 @@ class HomePage(ttk.Frame):
         scrollbar.pack(side="right", fill="y", padx=(0, 8), pady=8)
         self.playlists_tree.configure(yscrollcommand=scrollbar.set)
 
+        # Actions row
         actions_frame = ttk.Frame(playlists_tab)
         actions_frame.pack(fill="x", padx=12, pady=(0, 12))
 
+        # Refresh playlists button (disabled until login)
+        self.refresh_button = ttk.Button(
+            actions_frame,
+            text="Refresh playlists",
+            command=self.on_refresh_clicked,
+            state="disabled",
+        )
+        self.refresh_button.pack(side="left")
+
+        # Open playlist button (disabled until login)
         self.open_playlist_button = ttk.Button(
             actions_frame,
             text="Open selected playlist",
@@ -169,6 +181,7 @@ class HomePage(ttk.Frame):
 
             self.status_label_var.set("Playlists loaded.")
             self.open_playlist_button.config(state="normal")
+            self.refresh_button.config(state="normal")
 
             self._update_quota_label()
 
@@ -181,6 +194,27 @@ class HomePage(ttk.Frame):
         except Exception as e:
             messagebox.showerror("Error", f"Failed to sign in or load playlists:\n\n{e}")
             self.status_label_var.set("Sign-in failed.")
+
+    def on_refresh_clicked(self) -> None:
+        """
+        Refresh playlists list (and update quota usage display).
+        """
+        if not self.youtube_client:
+            messagebox.showwarning("Not signed in", "Please sign in first.")
+            return
+
+        try:
+            self.status_label_var.set("Refreshing playlists...")
+            self.update_idletasks()
+
+            self.playlists = self.youtube_client.list_playlists()
+            self._load_playlists_into_tree()
+
+            self.status_label_var.set("Playlists refreshed.")
+            self._update_quota_label()
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to refresh playlists:\n\n{e}")
+            self.status_label_var.set("Failed to refresh playlists.")
 
     def on_open_playlist_clicked(self) -> None:
         """
@@ -209,5 +243,6 @@ class HomePage(ttk.Frame):
             all_playlists=self.playlists,
         )
 
-        # Update quota estimate after actions in child window
+        # Quota usage might have changed (if window did operations previously),
+        # but this call here mainly keeps things in sync if you add more logic later.
         self._update_quota_label()

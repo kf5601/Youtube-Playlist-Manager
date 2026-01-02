@@ -1,19 +1,20 @@
 # youtube_client.py
+# more dependencies yay...
 import os
 import pickle
 from typing import Optional, Dict, Any, List
-
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from google.auth.transport.requests import Request
 
-
+# download from Google Cloud Console its gonna have some numbers and letters behind "secret" you can change that if you want or change this to match
 CLIENT_SECRET_FILE = "client_secrets.json"
 
 # Scopes: full YouTube manage (needed for playlist CRUD + search)
 SCOPES = ["https://www.googleapis.com/auth/youtube"]
 
 # Quota cost (from YouTube Data API docs)
+# this is subject to change, and usually they give 10,000 units per day
 QUOTA_COST = {
     "playlists.list": 1,
     "playlistItems.list": 1,
@@ -29,9 +30,9 @@ class YouTubeClient:
     Wraps OAuth + YouTube Data API calls.
 
     Tracks approximate quota usage *in this session* based on known costs.
-    This is NOT the real "remaining quota" from Google (they don't expose it).
+    This is NOT the real "remaining quota" from Google (they don't expose it :\ ).
     """
-
+    # SECURITY NOTE: this implementation stores OAuth tokens in a pickle file, which is not secure for shared environments. Use at your own risk and add to gitignore
     def __init__(self, token_file: str = "token.pickle") -> None:
         self.token_file = token_file
         self.creds = None
@@ -128,7 +129,7 @@ class YouTubeClient:
     # ------------------------------------------------------------------
     # Playlists
     # ------------------------------------------------------------------
-
+    # change max_result as needed, but more than 50 playlist is crazy
     def list_playlists(self, max_results: int = 50) -> List[Dict[str, Any]]:
         """
         Return a list of playlists the user owns.
@@ -167,7 +168,7 @@ class YouTubeClient:
     # ------------------------------------------------------------------
 
     def list_playlist_items(
-        self, playlist_id: str, max_results: int = 50
+        self, playlist_id: str, max_results: int = 300
     ) -> List[Dict[str, Any]]:
         """
         Return playlist items (videos) in a playlist.

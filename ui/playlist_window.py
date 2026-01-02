@@ -11,7 +11,7 @@ class PlaylistWindow(tk.Toplevel):
     A separate window that manages a single playlist:
       - List videos in the playlist
       - Delete from playlist
-      - Move to another playlist
+      - Copy (add) to another playlist
       - Search YouTube and add to this playlist
     """
 
@@ -32,7 +32,7 @@ class PlaylistWindow(tk.Toplevel):
         self.title(f"Playlist: {playlist.get('title', '(no title)')}")
         # Bigger default window so buttons are visible without resizing
         self.geometry("1920x1080")
-        self.minsize(1000, 750)
+        self.minsize(1000, 650)
 
         self.videos: List[Dict[str, Any]] = []
         self.search_results: List[Dict[str, Any]] = []
@@ -93,8 +93,8 @@ class PlaylistWindow(tk.Toplevel):
         )
         self.delete_button.pack(side="left", padx=(0, 4))
 
-        # Dropdown for "Move to playlist"
-        ttk.Label(buttons_frame, text="Move to:").pack(side="left")
+        # Dropdown for "Copy to playlist"
+        ttk.Label(buttons_frame, text="Copy to:").pack(side="left")
         self.target_playlist_var = tk.StringVar(value="")
         playlist_titles = [
             f"{pl.get('title', '(no title)')} ({pl['id']})"
@@ -111,7 +111,7 @@ class PlaylistWindow(tk.Toplevel):
         self.target_menu.pack(side="left", padx=4)
 
         self.move_button = ttk.Button(
-            buttons_frame, text="Move video", command=self.on_move_clicked
+            buttons_frame, text="Copy video", command=self.on_move_clicked
         )
         self.move_button.pack(side="left", padx=(4, 0))
 
@@ -229,14 +229,17 @@ class PlaylistWindow(tk.Toplevel):
             messagebox.showerror("Error", f"Failed to delete:\n\n{e}")
 
     def on_move_clicked(self) -> None:
+        """
+        Copy a video to another playlist (does NOT delete from original).
+        """
         selected = self.videos_tree.selection()
         if not selected:
-            messagebox.showwarning("No selection", "Select a video to move.")
+            messagebox.showwarning("No selection", "Select a video to copy.")
             return
 
         chosen = self.target_playlist_var.get()
         if not chosen:
-            messagebox.showwarning("No target", "Choose a target playlist to move to.")
+            messagebox.showwarning("No target", "Choose a target playlist to copy to.")
             return
 
         # chosen format: "Title (playlist_id)"
@@ -258,23 +261,21 @@ class PlaylistWindow(tk.Toplevel):
         video_id = item["video_id"]
 
         if not messagebox.askyesno(
-            "Confirm move",
-            f"Move video '{item.get('title', '(no title)')}' "
-            f"to playlist ID {target_playlist_id} ?",
+            "Confirm copy",
+            f"Copy video '{item.get('title', '(no title)')}'\n"
+            f"to playlist ID {target_playlist_id} ?\n\n"
+            f"(It will remain in the original playlist.)",
         ):
             return
 
         try:
-            self.youtube_client.move_playlist_item(
-                source_playlist_item_id=playlist_item_id,
-                source_playlist_id=self.playlist["id"],
-                target_playlist_id=target_playlist_id,
-                video_id=video_id,
-            )
-            self._load_playlist_items()
-            messagebox.showinfo("Moved", "Video moved successfully.")
+            # Only insert into target; leave original alone
+            self.youtube_client.insert_playlist_item(target_playlist_id, video_id)
+            # We keep current playlist items as-is (no reload needed here),
+            # but you could reload if you want to keep positions updated.
+            messagebox.showinfo("Copied", "Video copied to target playlist.")
         except Exception as e:
-            messagebox.showerror("Error", f"Failed to move video:\n\n{e}")
+            messagebox.showerror("Error", f"Failed to copy video:\n\n{e}")
 
     # ------------------------------------------------------------------
     # Event handlers - search side
