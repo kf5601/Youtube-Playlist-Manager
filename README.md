@@ -46,101 +46,107 @@ YouTubePlayListAPI/
    ├─ __init__.py             # Empty, marks ui as a Python package.
    ├─ home.py                 # HomePage: login, quota display, playlists list, open playlist window.
    └─ playlist_window.py      # PlaylistWindow: per-playlist management (videos + search).
+└─ doc/
+   └─ assets/                 # documentation images
 ```
 
-Setup – Google Cloud / OAuth
+---
+
+## Setup – Google Cloud / OAuth
 **Each user must set up their own Google Cloud project and credentials.**
-1️⃣ Create a Google Cloud project
+### 1️⃣ Create a Google Cloud project
 
-Go to Google Cloud Console:
-https://console.cloud.google.com/
+- Go to Google Cloud Console: https://console.cloud.google.com/
 
-Create a new project (or use an existing one).
+- Create a new project (or use an existing one).
 
-2️⃣ Enable YouTube Data API v3
+### 2️⃣ Enable YouTube Data API v3
 
-In the Cloud Console, go to:
+- In the Cloud Console, go to:
 
-APIs & Services → Library
+- APIs & Services → Library
 
-Search for YouTube Data API v3.
+- Search for YouTube Data API v3.
 
-Click Enable.
+- Click Enable.
 
-3️⃣ Configure OAuth consent screen
+### 3️⃣ Configure OAuth consent screen
 
-APIs & Services → OAuth consent screen
+- APIs & Services → OAuth consent screen
 
-User type: choose External.
+- User type: choose External.
 
-Fill in:
+- Fill in:
 
-App name: e.g. Local YouTube Playlist Manager
+  - App name: e.g. Local YouTube Playlist Manager
 
-User support email: your email
+  - User support email: your email
 
-Developer contact email: your email
+  - Developer contact email: your email
 
-Save and continue.
-You don’t need full verification for local/testing use.
+- Save and continue.
+- You don’t need full verification for local/testing use.
 
-4️⃣ Add yourself as a Test User
+### 4️⃣ Add yourself as a Test User
 
-Still under OAuth consent screen:
+- Still under OAuth consent screen:
 
-Scroll down to Test users.
+  - Scroll down to Audience
 
-Click + ADD USERS.
+  - Click `+ Add users`.
 
-Add your Google account email(s).
+  - Add your Google account email(s).
 
-Save.
+  - Save.
 
-As long as the app is in Testing mode, only test users can log in.
+- As long as the app is in Testing mode, only test users can log in.
 
-5️⃣ Create OAuth credentials (Desktop app)
+### 5️⃣ Create OAuth credentials (Desktop app)
 
-Go to:
+- Go to:
 
-APIs & Services → Credentials
+  - APIs & Services → Credentials
 
-Click + CREATE CREDENTIALS → OAuth client ID
+  - Click + CREATE CREDENTIALS → OAuth client ID
 
-Application type: Desktop application
+  - Application type: Desktop application
 
-Name: anything (e.g. Local Desktop Client)
+  - Name: anything (e.g. Local Desktop Client)
 
-Create → Download JSON file.
+- Create → Download JSON file.
 
-Save it into the project root as:
+- Rename as `client_secrets.json` and save it into the project root as:
 
 YouTubePlayListAPI/
 ├─ app.py
 ├─ youtube_client.py
-├─ client_secret.json    <-- put it here
+├─ client_secrets.json    <-- put it here
+├─ doc/
 └─ ui/
 
 ⚠️ This client_secret.json is your private key for this app.
 Keep it out of git and do not share it.
 
-Running the App
-From the project root run:
-python app.py
+---
 
-The app will open a Tkinter window:
+## Running the App
+- From the project root run:
+  - python app.py
 
-Click “Sign in with Google”
+- The app will open a Tkinter window:
 
-A browser window will open:
+- Click “Sign in with Google”
 
-Choose the test user account you whitelisted
+- A browser window will open:
 
-Accept the permissions (YouTube Data API scopes)
+  - Choose the test user account you whitelisted
 
-The app will:
+  - Accept the permissions (YouTube Data API scopes)
 
-Show your channel name
+- The app will:
 
-Fetch your playlists
+  - Show your channel name
 
-Display approximate quota usage for this session
+  - Fetch your playlists
+
+  - Display approximate quota usage for this session
