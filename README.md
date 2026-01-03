@@ -15,7 +15,7 @@ Everything runs **locally** on your machine. Each user brings their own Google C
 Features
 
 - Desktop GUI (Tkinter, no browser UI required after login)
-- OAuth login with Google (using your own `client_secret.json`)
+- OAuth login with Google (using your own `client_secrets.json`)
 - List all playlists for your YouTube account
 - View videos inside a playlist
 - Delete videos from a playlist
@@ -65,16 +65,24 @@ YouTubePlayListAPI/
 - In the Cloud Console, go to:
 
 - APIs & Services → Library
+    - <img width="2559" height="1403" alt="1" src="https://github.com/user-attachments/assets/b90c0345-7935-4b50-83a6-b8572aeccd89" />
+
 
 - Search for YouTube Data API v3.
+    - <img width="2553" height="1404" alt="2" src="https://github.com/user-attachments/assets/b457f4bd-3668-4dbd-96bf-d4232c580126" />
+
 
 - Click Enable.
 
 ### 3️⃣ Configure OAuth consent screen
 
 - APIs & Services → OAuth consent screen
+    - <img width="2560" height="1404" alt="3" src="https://github.com/user-attachments/assets/fdc93b72-fd1a-4063-8d29-55e24d1cd258" />
+
 
 - User type: choose External.
+    - <img width="2556" height="1401" alt="4" src="https://github.com/user-attachments/assets/60522fed-85f8-4f7d-b2f2-7c9eeeb11aef" />
+
 
 - Fill in:
 
@@ -94,6 +102,8 @@ YouTubePlayListAPI/
   - Scroll down to Audience
 
   - Click `+ Add users`.
+      - <img width="2558" height="1402" alt="5" src="https://github.com/user-attachments/assets/f3b5ab05-d5ba-4094-b138-1bf8db0477bf" />
+
 
   - Add your Google account email(s).
 
@@ -106,25 +116,37 @@ YouTubePlayListAPI/
 - Go to:
 
   - APIs & Services → Credentials
+      - <img width="2558" height="1404" alt="6" src="https://github.com/user-attachments/assets/b0c424b2-e0db-40d3-8d9f-27d9837f77e3" />
+
 
   - Click + CREATE CREDENTIALS → OAuth client ID
+      - <img width="2557" height="1400" alt="7" src="https://github.com/user-attachments/assets/a2efd0a9-8c07-4904-a835-eaa0e47e240b" />
 
-  - Application type: Desktop application
+
+  - Application type: Desktop app
+      - <img width="584" height="404" alt="8" src="https://github.com/user-attachments/assets/f20cd3ef-4137-4380-bda0-04e58202868b" />
+
 
   - Name: anything (e.g. Local Desktop Client)
 
 - Create → Download JSON file.
+    - <img width="511" height="646" alt="9" src="https://github.com/user-attachments/assets/ec5b5f29-0ad1-4114-93c6-390d4bd65aab" />
+
+
 
 - Rename as `client_secrets.json` and save it into the project root as:
-
+```
 YouTubePlayListAPI/
 ├─ app.py
 ├─ youtube_client.py
 ├─ client_secrets.json    <-- put it here
 ├─ doc/
 └─ ui/
+```
+<img width="653" height="334" alt="10" src="https://github.com/user-attachments/assets/5bf4756c-18ee-477f-b358-12ab2b081263" />
 
-⚠️ This client_secret.json is your private key for this app.
+
+⚠️ This client_secrets.json is your private key for this app.
 Keep it out of git and do not share it.
 
 ---
@@ -136,6 +158,8 @@ Keep it out of git and do not share it.
 - The app will open a Tkinter window:
 
 - Click “Sign in with Google”
+  - <img width="1920" height="1108" alt="11" src="https://github.com/user-attachments/assets/a9c85ff7-98c7-4bcf-8d67-224f23fd05b1" />
+
 
 - A browser window will open:
 
