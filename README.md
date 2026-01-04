@@ -21,6 +21,7 @@ Features
 - Delete videos from a playlist
 - Copy videos from one playlist to another
 - Global YouTube search and add search results into a playlist
+- Switch between Google accounts with logout button
 - Shows **approximate quota usage** in the current app session
 
 > **Note:** Google does **not** provide an API endpoint to see your exact remaining daily quota.  
@@ -174,3 +175,5 @@ Keep it out of git and do not share it.
   - Fetch your playlists
 
   - Display approximate quota usage for this session
+ 
+  - Allow logout to change to a different Google account
