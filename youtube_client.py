@@ -285,3 +285,24 @@ class YouTubeClient:
                 }
             )
         return results
+    
+    # ------------------------------------------------------------------
+    # Logout helper
+    # ------------------------------------------------------------------
+    def logout(self) -> None:
+        """
+        Logs out locally by deleting the cached token file and clearing in-memory client state.
+        This does NOT log you out of Google in your browser; it just forces OAuth next time.
+        """
+        # Clear in-memory state
+        self.creds = None
+        self.service = None
+        self.quota_used_units = 0
+        # Delete cached token so OAuth is required next time
+        try:
+            if os.path.exists(self.token_file):
+                os.remove(self.token_file)
+        except Exception:
+            # Not fatal; user can still manually delete it
+            pass
+

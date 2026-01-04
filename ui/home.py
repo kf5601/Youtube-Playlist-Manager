@@ -45,6 +45,12 @@ class HomePage(ttk.Frame):
         user_info_label = ttk.Label(top_bar, textvariable=self.current_user_label)
         user_info_label.pack(side="left", padx=(12, 0))
 
+        self.logout_button = ttk.Button(
+            top_bar, text="Logout", command=self.on_logout_clicked, state="disabled"
+        )
+        self.logout_button.pack(side="left", padx=(8, 0))
+
+
         # Notebook
         notebook = ttk.Notebook(self)
         notebook.pack(fill="both", expand=True, padx=16, pady=(0, 16))
@@ -182,7 +188,7 @@ class HomePage(ttk.Frame):
             self.status_label_var.set("Playlists loaded.")
             self.open_playlist_button.config(state="normal")
             self.refresh_button.config(state="normal")
-
+            self.logout_button.config(state="normal")
             self._update_quota_label()
 
         except FileNotFoundError as e:
@@ -194,6 +200,45 @@ class HomePage(ttk.Frame):
         except Exception as e:
             messagebox.showerror("Error", f"Failed to sign in or load playlists:\n\n{e}")
             self.status_label_var.set("Sign-in failed.")
+            
+    def on_logout_clicked(self) -> None:
+            """
+            Clears local OAuth token and resets the UI.
+            """
+            if not self.youtube_client:
+                return
+
+            confirm = messagebox.askyesno(
+                "Logout",
+                "This will remove the locally saved OAuth token and reset the app.\n\n"
+                "You will need to sign in again next time.\n\n"
+                "Continue?"
+            )
+            if not confirm:
+                return
+
+            try:
+                self.youtube_client.logout()
+            except Exception:
+                # Even if something goes wrong deleting the file, reset UI anyway
+                pass
+
+            # Reset app state
+            self.youtube_client = None
+            self.playlists = []
+            self.current_user_label.set("Not signed in")
+            self.quota_label_var.set("Quota used this session: 0 units")
+            self.status_label_var.set("Logged out. Please sign in to view your playlists.")
+
+            # Disable buttons until next login
+            self.open_playlist_button.config(state="disabled")
+            self.refresh_button.config(state="disabled")
+            self.logout_button.config(state="disabled")
+
+            # Clear playlists table
+            for row in self.playlists_tree.get_children():
+                self.playlists_tree.delete(row)
+
 
     def on_refresh_clicked(self) -> None:
         """
@@ -242,7 +287,7 @@ class HomePage(ttk.Frame):
             playlist=playlist,
             all_playlists=self.playlists,
         )
-
+        
         # Quota usage might have changed (if window did operations previously),
         # but this call here mainly keeps things in sync if you add more logic later.
         self._update_quota_label()
