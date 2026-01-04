@@ -1,4 +1,5 @@
 # ui/home.py
+# dependencies
 import tkinter as tk
 from tkinter import ttk, messagebox
 
@@ -14,8 +15,10 @@ class HomePage(ttk.Frame):
       - List playlists
       - Open selected playlist in a new window
       - Refresh playlists on demand
+      - logout (clear local OAuth token i.e. pickle file)
     """
 
+    # home page UI initialization
     def __init__(self, master: tk.Misc, **kwargs):
         super().__init__(master, **kwargs)
 
@@ -28,6 +31,7 @@ class HomePage(ttk.Frame):
 
         self._build_ui()
 
+    # adding UI components to the home page
     def _build_ui(self) -> None:
         # Title
         title = ttk.Label(self, text="YouTube Playlist Manager", style="Title.TLabel")
@@ -200,7 +204,7 @@ class HomePage(ttk.Frame):
         except Exception as e:
             messagebox.showerror("Error", f"Failed to sign in or load playlists:\n\n{e}")
             self.status_label_var.set("Sign-in failed.")
-            
+
     def on_logout_clicked(self) -> None:
             """
             Clears local OAuth token and resets the UI.

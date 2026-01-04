@@ -110,7 +110,7 @@ class YouTubeClient:
         if not self.service:
             raise RuntimeError("YouTube client is not authenticated.")
 
-        self._add_quota_usage("playlists.list")  # close enough; channels.list is also 1
+        self._add_quota_usage("playlists.list")  # close enough; channels.list also cost 1 quota
 
         resp = (
             self.service.channels()
@@ -182,9 +182,9 @@ class YouTubeClient:
         items: List[Dict[str, Any]] = []
 
         request = self.service.playlistItems().list(
-            part="snippet,contentDetails",
-            playlistId=playlist_id,
-            maxResults=max_results,
+            part = "snippet,contentDetails",
+            playlistId = playlist_id,
+            maxResults = max_results,
         )
 
         while request is not None:
@@ -232,6 +232,7 @@ class YouTubeClient:
         }
         self.service.playlistItems().insert(part="snippet", body=body).execute()
 
+    # deprecated: not used as it deletes video from original playlist
     def move_playlist_item(
         self,
         source_playlist_item_id: str,
