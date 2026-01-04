@@ -1,4 +1,5 @@
 # ui/playlist_window.py
+# dependencies
 import tkinter as tk
 from tkinter import ttk, messagebox
 from typing import Dict, Any, List
