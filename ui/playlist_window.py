@@ -67,7 +67,7 @@ class PlaylistWindow(tk.Toplevel):
             left_frame,
             columns=("title", "video_id", "position"),
             show="headings",
-            selectmode="browse",
+            selectmode="extended",
         )
         self.videos_tree.heading("title", text="Title")
         self.videos_tree.heading("video_id", text="Video ID")
@@ -210,32 +210,40 @@ class PlaylistWindow(tk.Toplevel):
     def on_delete_clicked(self) -> None:
         selected = self.videos_tree.selection()
         if not selected:
-            messagebox.showwarning("No selection", "Select a video to delete.")
+            messagebox.showwarning("No selection", "Select one or more videos to delete.")
             return
-
-        playlist_item_id = selected[0]
 
         if not messagebox.askyesno(
             "Confirm delete",
-            "Remove this video from the playlist?",
+            f"Remove {len(selected)} selected video(s) from this playlist?",
         ):
             return
 
-        try:
-            self.youtube_client.delete_playlist_item(playlist_item_id)
-            # reload
-            self._load_playlist_items()
-            messagebox.showinfo("Deleted", "Video removed from playlist.")
-        except Exception as e:
-            messagebox.showerror("Error", f"Failed to delete:\n\n{e}")
+        failed = 0
+        for playlist_item_id in selected:
+            try:
+                self.youtube_client.delete_playlist_item(playlist_item_id)
+            except Exception:
+                failed += 1
+
+        # Reload playlist after batch operation
+        self._load_playlist_items()
+
+        if failed == 0:
+            messagebox.showinfo("Deleted", f"Removed {len(selected)} video(s) from playlist.")
+        else:
+            messagebox.showwarning(
+                "Partial delete",
+                f"Removed {len(selected) - failed} video(s).\nFailed to remove {failed} video(s)."
+            )
 
     def on_move_clicked(self) -> None:
         """
-        Copy a video to another playlist (does NOT delete from original).
+        Copy selected video(s) to another playlist (does NOT delete from original).
         """
         selected = self.videos_tree.selection()
         if not selected:
-            messagebox.showwarning("No selection", "Select a video to copy.")
+            messagebox.showwarning("No selection", "Select one or more videos to copy.")
             return
 
         chosen = self.target_playlist_var.get()
@@ -250,33 +258,44 @@ class PlaylistWindow(tk.Toplevel):
 
         target_playlist_id = chosen.split("(")[-1].rstrip(")").strip()
 
-        playlist_item_id = selected[0]
-        item = next(
-            (v for v in self.videos if v["playlist_item_id"] == playlist_item_id),
-            None,
-        )
-        if not item:
-            messagebox.showerror("Error", "Could not find selected video details.")
-            return
-
-        video_id = item["video_id"]
-
         if not messagebox.askyesno(
             "Confirm copy",
-            f"Copy video '{item.get('title', '(no title)')}'\n"
-            f"to playlist ID {target_playlist_id} ?\n\n"
-            f"(It will remain in the original playlist.)",
+            f"Copy {len(selected)} selected video(s) to playlist ID {target_playlist_id}?\n\n"
+            f"(They will remain in the original playlist.)",
         ):
             return
 
-        try:
-            # Only insert into target; leave original alone
-            self.youtube_client.insert_playlist_item(target_playlist_id, video_id)
-            # We keep current playlist items as-is (no reload needed here),
-            # but you could reload if you want to keep positions updated.
-            messagebox.showinfo("Copied", "Video copied to target playlist.")
-        except Exception as e:
-            messagebox.showerror("Error", f"Failed to copy video:\n\n{e}")
+        # Build a quick lookup from playlist_item_id -> video_id/title
+        by_pid = {v["playlist_item_id"]: v for v in self.videos}
+
+        success = 0
+        failed = 0
+
+        for playlist_item_id in selected:
+            item = by_pid.get(playlist_item_id)
+            if not item:
+                failed += 1
+                continue
+
+            video_id = item.get("video_id")
+            if not video_id:
+                failed += 1
+                continue
+
+            try:
+                self.youtube_client.insert_playlist_item(target_playlist_id, video_id)
+                success += 1
+            except Exception:
+                failed += 1
+
+        if failed == 0:
+            messagebox.showinfo("Copied", f"Copied {success} video(s) to the target playlist.")
+        else:
+            messagebox.showwarning(
+                "Partial copy",
+                f"Copied {success} video(s).\nFailed to copy {failed} video(s).\n\n"
+                "Tip: Some failures may be duplicates or restricted videos."
+            )
 
     # ------------------------------------------------------------------
     # Event handlers - search side
