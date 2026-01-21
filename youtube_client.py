@@ -168,7 +168,7 @@ class YouTubeClient:
     # ------------------------------------------------------------------
 
     def list_playlist_items(
-        self, playlist_id: str, max_results: int = 300
+        self, playlist_id: str, max_results: int = 500 # pulls 500 songs per playlist, increase if needed
     ) -> List[Dict[str, Any]]:
         """
         Return playlist items (videos) in a playlist.
