@@ -93,6 +93,12 @@ class PlaylistWindow(tk.Toplevel):
             buttons_frame, text="Delete from playlist", command=self.on_delete_clicked
         )
         self.delete_button.pack(side="left", padx=(0, 4))
+        self.copy_names_button = ttk.Button(
+            buttons_frame,
+            text="Copy video names",
+            command=self.on_copy_video_names_clicked
+        )
+        self.copy_names_button.pack(side="left", padx=(4, 0))
 
         # Dropdown for "Copy to playlist"
         ttk.Label(buttons_frame, text="Copy to:").pack(side="left")
@@ -360,3 +366,28 @@ class PlaylistWindow(tk.Toplevel):
             messagebox.showinfo("Added", "Video added to playlist.")
         except Exception as e:
             messagebox.showerror("Error", f"Failed to add video:\n\n{e}")
+
+
+    def on_copy_video_names_clicked(self) -> None:
+        """
+        Copy all video names from the current playlist to the system clipboard.
+        """
+        if not self.videos:
+            messagebox.showwarning("No videos", "There are no videos to copy.")
+            return
+
+        video_titles = [
+            item.get("title") or "(no title)"
+            for item in self.videos
+        ]
+
+        clipboard_text = "\n".join(video_titles)
+
+        self.clipboard_clear()
+        self.clipboard_append(clipboard_text)
+        self.update()
+
+        messagebox.showinfo(
+            "Copied",
+            f"Copied {len(video_titles)} video name(s) to clipboard."
+        )
