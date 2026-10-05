@@ -63,6 +63,45 @@ class PlaylistWindow(tk.Toplevel):
         lf_label = ttk.Label(left_frame, text="Videos in this playlist")
         lf_label.pack(anchor="w", pady=(0, 4))
 
+        # Local playlist search
+        playlist_search_frame = ttk.Frame(left_frame)
+        playlist_search_frame.pack(fill="x", pady=(0, 6))
+
+        ttk.Label(
+            playlist_search_frame,
+            text="Find:"
+        ).pack(side="left")
+
+        self.playlist_search_var = tk.StringVar()
+
+        self.playlist_search_entry = ttk.Entry(
+            playlist_search_frame,
+            textvariable=self.playlist_search_var
+        )
+        self.playlist_search_entry.pack(
+            side="left",
+            fill="x",
+            expand=True,
+            padx=(5, 5)
+        )
+
+        self.clear_search_button = ttk.Button(
+            playlist_search_frame,
+            text="Clear",
+            command=self.clear_playlist_search
+        )
+        self.clear_search_button.pack(side="left")
+
+        # Filter automatically whenever the search text changes
+        self.playlist_search_var.trace_add(
+            "write",
+            self.on_playlist_search_changed
+        )
+
+        # Ctrl+F focuses the playlist search box
+        self.bind("<Control-f>", self.focus_playlist_search)
+        self.bind("<Control-F>", self.focus_playlist_search)
+
         self.videos_tree = ttk.Treeview(
             left_frame,
             columns=("title", "video_id", "position"),
@@ -193,21 +232,75 @@ class PlaylistWindow(tk.Toplevel):
         except Exception as e:
             messagebox.showerror("Error", f"Failed to load playlist items:\n\n{e}")
 
-    def _refresh_videos_tree(self) -> None:
+    def _refresh_videos_tree(self, videos=None) -> None:
+        """
+        Refresh the playlist Treeview.
+
+        If 'videos' is provided, only those videos are displayed.
+        Otherwise, all videos in self.videos are displayed.
+        """
         for row in self.videos_tree.get_children():
             self.videos_tree.delete(row)
 
-        for item in self.videos:
+        if videos is None:
+            videos = self.videos
+
+        for item in videos:
             pid = item["playlist_item_id"]
             title = item.get("title") or "(no title)"
             vid = item.get("video_id") or ""
-            pos = item.get("position") if item.get("position") is not None else ""
+            pos = (
+                item.get("position")
+                if item.get("position") is not None
+                else ""
+            )
+
             self.videos_tree.insert(
                 "",
                 "end",
                 iid=pid,
                 values=(title, vid, pos),
             )
+
+    def focus_playlist_search(self, event=None) -> str:
+        """
+        Focus the local playlist search box when Ctrl+F is pressed.
+        """
+        self.playlist_search_entry.focus_set()
+        self.playlist_search_entry.select_range(0, tk.END)
+
+        # Prevent Tkinter from doing anything else with Ctrl+F
+        return "break"
+
+
+    def on_playlist_search_changed(self, *args) -> None:
+        """
+        Filter the currently loaded playlist videos as the user types.
+
+        This is completely local and does NOT make a YouTube API request,
+        so it does not consume API quota.
+        """
+        query = self.playlist_search_var.get().strip().lower()
+
+        if not query:
+            self._refresh_videos_tree()
+            return
+
+        filtered_videos = [
+            video
+            for video in self.videos
+            if query in (video.get("title") or "").lower()
+        ]
+
+        self._refresh_videos_tree(filtered_videos)
+
+
+    def clear_playlist_search(self) -> None:
+        """
+        Clear the local playlist search and display every video again.
+        """
+        self.playlist_search_var.set("")
+        self.playlist_search_entry.focus_set()
 
     # ------------------------------------------------------------------
     # Event handlers - playlist side
